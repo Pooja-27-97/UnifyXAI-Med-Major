@@ -27,7 +27,10 @@ export default function PredictionResult() {
   const { patient, result, unified } = current;
 
   return (
-    <Layout eyebrow="Prediction Result" title={patient.name || "Unnamed Patient"}>
+    <Layout
+      eyebrow="Prediction Result"
+      title={patient.name || patient.patientId || "Patient"}
+    >
       <div className="grid grid-2" style={{ alignItems: "start", marginBottom: 18 }}>
         <div className="card card-pad">
           <div className="card-head">
@@ -45,7 +48,9 @@ export default function PredictionResult() {
             <div>
               <p style={{ fontSize: 20, fontWeight: 700 }}>{result.prediction}</p>
               <p style={{ fontSize: 12.5, color: "var(--muted)" }}>
-                {patient.gender}, {patient.age} yrs {patient.patientId && `· ID ${patient.patientId}`}
+                {getSexLabel(patient.Sex)} · Age Group{" "}
+                {getAgeGroupLabel(patient.Age)}
+                {patient.patientId && ` · ID ${patient.patientId}`}
               </p>
             </div>
             <div style={{ marginLeft: "auto" }}>
@@ -78,33 +83,64 @@ export default function PredictionResult() {
         </div>
       </div>
 
-      <div className="card card-pad">
+      <div className="card card-pad" style={{ marginBottom: 18 }}>
         <div className="card-head">
           <div>
-            <h3>Explore the Explanation</h3>
-            <p>Choose how you'd like to inspect why the model made this call</p>
+            <h3>Patient Profile</h3>
+            <p>Key information submitted for this prediction</p>
           </div>
+          <User2 size={19} color="var(--blue-700)" />
         </div>
-        <div className="grid grid-3">
-          <ActionTile
-            icon={BarChart3} color="var(--shap)" title="View SHAP"
-            desc="Game-theoretic feature attribution for this prediction."
-            onClick={() => navigate("/explainability?tab=shap")}
+
+        <div className="grid grid-4">
+          <MiniStat
+            label="BMI"
+            value={patient.BMI ?? "—"}
           />
-          <ActionTile
-            icon={Waypoints} color="var(--lime)" title="View LIME"
-            desc="Local surrogate model explanation around this patient."
-            onClick={() => navigate("/explainability?tab=lime")}
+
+          <MiniStat
+            label="General Health"
+            value={
+              {
+                1: "Excellent",
+                2: "Very Good",
+                3: "Good",
+                4: "Fair",
+                5: "Poor",
+              }[patient.GenHlth] || "—"
+            }
           />
-          <ActionTile
-            icon={Layers3} color="var(--unified)" title="View Unified Explanation"
-            desc="SHAP + LIME reconciled into one doctor-friendly ranking."
-            onClick={() => navigate("/explainability?tab=unified")}
+
+          <MiniStat
+            label="High Blood Pressure"
+            value={Number(patient.HighBP) === 1 ? "Yes" : "No"}
+          />
+
+          <MiniStat
+            label="High Cholesterol"
+            value={Number(patient.HighChol) === 1 ? "Yes" : "No"}
+          />
+
+          <MiniStat
+            label="Physical Activity"
+            value={Number(patient.PhysActivity) === 1 ? "Yes" : "No"}
+          />
+
+          <MiniStat
+            label="Smoker"
+            value={Number(patient.Smoker) === 1 ? "Yes" : "No"}
+          />
+
+          <MiniStat
+            label="Mental Health Days"
+            value={`${patient.MentHlth ?? 0} days`}
+          />
+
+          <MiniStat
+            label="Physical Health Days"
+            value={`${patient.PhysHlth ?? 0} days`}
           />
         </div>
-        <button className="btn btn-secondary" style={{ marginTop: 16 }} onClick={() => navigate("/report")}>
-          <ClipboardList size={15} /> Generate Clinical Report
-        </button>
       </div>
     </Layout>
   );
@@ -138,4 +174,28 @@ function ActionTile({ icon: Icon, color, title, desc, onClick }) {
       <p style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>{desc}</p>
     </button>
   );
+}
+
+function getSexLabel(value) {
+  return Number(value) === 1 ? "Male" : "Female";
+}
+
+function getAgeGroupLabel(value) {
+  const groups = {
+    1: "18–24",
+    2: "25–29",
+    3: "30–34",
+    4: "35–39",
+    5: "40–44",
+    6: "45–49",
+    7: "50–54",
+    8: "55–59",
+    9: "60–64",
+    10: "65–69",
+    11: "70–74",
+    12: "75–79",
+    13: "80+",
+  };
+
+  return groups[value] || "Not specified";
 }
