@@ -9,14 +9,27 @@
 // -----------------------------------------------------------------------
 
 export const FEATURES = [
-  { key: "pregnancies", label: "Pregnancies", unit: "" },
-  { key: "glucose", label: "Glucose", unit: "mg/dL" },
-  { key: "bloodPressure", label: "Blood Pressure", unit: "mmHg" },
-  { key: "skinThickness", label: "Skin Thickness", unit: "mm" },
-  { key: "insulin", label: "Insulin", unit: "mu U/mL" },
-  { key: "bmi", label: "BMI", unit: "kg/m\u00B2" },
-  { key: "dpf", label: "Diabetes Pedigree Function", unit: "" },
-  { key: "age", label: "Age", unit: "yrs" },
+  { key: "HighBP", label: "High Blood Pressure", unit: "" },
+  { key: "HighChol", label: "High Cholesterol", unit: "" },
+  { key: "CholCheck", label: "Cholesterol Check", unit: "" },
+  { key: "BMI", label: "BMI", unit: "kg/m²" },
+  { key: "Smoker", label: "Smoker", unit: "" },
+  { key: "Stroke", label: "History of Stroke", unit: "" },
+  { key: "HeartDiseaseorAttack", label: "Heart Disease or Heart Attack", unit: "" },
+  { key: "PhysActivity", label: "Physical Activity", unit: "" },
+  { key: "Fruits", label: "Fruit Consumption", unit: "" },
+  { key: "Veggies", label: "Vegetable Consumption", unit: "" },
+  { key: "HvyAlcoholConsump", label: "Heavy Alcohol Consumption", unit: "" },
+  { key: "AnyHealthcare", label: "Healthcare Coverage", unit: "" },
+  { key: "NoDocbcCost", label: "Unable to See Doctor Due to Cost", unit: "" },
+  { key: "GenHlth", label: "General Health", unit: "" },
+  { key: "MentHlth", label: "Mental Health", unit: "days" },
+  { key: "PhysHlth", label: "Physical Health", unit: "days" },
+  { key: "DiffWalk", label: "Difficulty Walking", unit: "" },
+  { key: "Sex", label: "Sex", unit: "" },
+  { key: "Age", label: "Age Group", unit: "" },
+  { key: "Education", label: "Education Level", unit: "" },
+  { key: "Income", label: "Income Level", unit: "" },
 ];
 
 function seededRandom(seed) {
@@ -40,27 +53,105 @@ function hashString(str) {
 // Rough "clinical weight" priors used to bias synthetic SHAP/LIME values
 // so the demo output looks medically plausible (glucose & BMI dominate).
 const FEATURE_WEIGHT = {
-  glucose: 1.0,
-  bmi: 0.78,
-  age: 0.6,
-  dpf: 0.5,
-  pregnancies: 0.4,
-  insulin: 0.38,
-  bloodPressure: 0.3,
-  skinThickness: 0.22,
+  GenHlth: 1.00,
+  BMI: 0.92,
+  HighBP: 0.77,
+  Age: 0.58,
+  HighChol: 0.57,
+  Income: 0.40,
+  PhysHlth: 0.35,
+  Education: 0.28,
+  MentHlth: 0.17,
+  Sex: 0.17,
+  DiffWalk: 0.17,
+  HeartDiseaseorAttack: 0.14,
+  Fruits: 0.09,
+  Smoker: 0.09,
+  PhysActivity: 0.08,
+  Veggies: 0.07,
+  HvyAlcoholConsump: 0.05,
+  CholCheck: 0.03,
+  NoDocbcCost: 0.03,
+  Stroke: 0.03,
+  AnyHealthcare: 0.02,
+};
+
+const RISK_DIRECTION = {
+  HighBP: 1,
+  HighChol: 1,
+  CholCheck: 0,
+  BMI: 1,
+  Smoker: 1,
+  Stroke: 1,
+  HeartDiseaseorAttack: 1,
+  PhysActivity: -1,
+  Fruits: -1,
+  Veggies: -1,
+  HvyAlcoholConsump: 1,
+  AnyHealthcare: 0,
+  NoDocbcCost: 1,
+  GenHlth: 1,
+  MentHlth: 1,
+  PhysHlth: 1,
+  DiffWalk: 1,
+  Sex: 0,
+  Age: 1,
+  Education: -1,
+  Income: -1,
 };
 
 function normalizePatient(patient) {
-  // Map raw clinical values to a rough 0-1 "risk contribution" scale
   return {
-    pregnancies: clamp(patient.pregnancies / 12),
-    glucose: clamp((patient.glucose - 70) / 130),
-    bloodPressure: clamp((patient.bloodPressure - 60) / 60),
-    skinThickness: clamp(patient.skinThickness / 50),
-    insulin: clamp(patient.insulin / 300),
-    bmi: clamp((patient.bmi - 18) / 25),
-    dpf: clamp(patient.dpf / 1.5),
-    age: clamp((patient.age - 18) / 60),
+    HighBP: Number(patient.HighBP) || 0,
+
+    HighChol: Number(patient.HighChol) || 0,
+
+    CholCheck: Number(patient.CholCheck) || 0,
+
+    BMI: clamp((Number(patient.BMI) - 18) / 25),
+
+    Smoker: Number(patient.Smoker) || 0,
+
+    Stroke: Number(patient.Stroke) || 0,
+
+    HeartDiseaseorAttack:
+      Number(patient.HeartDiseaseorAttack) || 0,
+
+    PhysActivity: Number(patient.PhysActivity) || 0,
+
+    Fruits: Number(patient.Fruits) || 0,
+
+    Veggies: Number(patient.Veggies) || 0,
+
+    HvyAlcoholConsump:
+      Number(patient.HvyAlcoholConsump) || 0,
+
+    AnyHealthcare:
+      Number(patient.AnyHealthcare) || 0,
+
+    NoDocbcCost:
+      Number(patient.NoDocbcCost) || 0,
+
+    // Dataset: 1 = excellent, 5 = poor
+    GenHlth: clamp((Number(patient.GenHlth) - 1) / 4),
+
+    // 0–30 days
+    MentHlth: clamp(Number(patient.MentHlth) / 30),
+
+    PhysHlth: clamp(Number(patient.PhysHlth) / 30),
+
+    DiffWalk: Number(patient.DiffWalk) || 0,
+
+    Sex: Number(patient.Sex) || 0,
+
+    // Dataset: 1 = 18–24, 13 = 80+
+    Age: clamp((Number(patient.Age) - 1) / 12),
+
+    // 1–6
+    Education: clamp((Number(patient.Education) - 1) / 5),
+
+    // 1–8
+    Income: clamp((Number(patient.Income) - 1) / 7),
   };
 }
 
@@ -73,21 +164,66 @@ function clamp(v) {
  */
 export function mockPredict(patient) {
   const norm = normalizePatient(patient);
+
   let score = 0;
-  Object.keys(norm).forEach((k) => {
-    score += norm[k] * FEATURE_WEIGHT[k];
+
+  Object.keys(norm).forEach((key) => {
+    const direction = RISK_DIRECTION[key];
+
+    if (direction === 0) {
+      return;
+    }
+
+    score +=
+      norm[key] *
+      FEATURE_WEIGHT[key] *
+      direction;
   });
-  const maxScore = Object.values(FEATURE_WEIGHT).reduce((a, b) => a + b, 0);
-  let probability = clamp(score / maxScore);
 
-  const seed = hashString(JSON.stringify(patient));
+  const maxScore = Object.entries(FEATURE_WEIGHT).reduce(
+    (total, [key, weight]) => {
+      return RISK_DIRECTION[key] === 0
+        ? total
+        : total + weight;
+    },
+    0
+  );
+
+  // Shift the score into a usable 0–1 range.
+  const rawScore = score / maxScore;
+
+  let probability = clamp(
+    0.35 + rawScore * 0.65
+  );
+
+  const seed = hashString(
+    JSON.stringify(patient)
+  );
+
   const rnd = seededRandom(seed);
-  probability = clamp(probability * 0.85 + rnd() * 0.15);
 
-  const prediction = probability >= 0.5 ? "Diabetic" : "Non-Diabetic";
-  const riskLevel = probability >= 0.66 ? "High" : probability >= 0.4 ? "Moderate" : "Low";
+  probability = clamp(
+    probability * 0.9 + rnd() * 0.1
+  );
 
-  return { prediction, probability, riskLevel, seed };
+  const prediction =
+    probability >= 0.5
+      ? "Diabetic"
+      : "Non-Diabetic";
+
+  const riskLevel =
+    probability >= 0.66
+      ? "High"
+      : probability >= 0.4
+      ? "Moderate"
+      : "Low";
+
+  return {
+    prediction,
+    probability,
+    riskLevel,
+    seed,
+  };
 }
 
 /**
@@ -97,11 +233,33 @@ export function mockPredict(patient) {
 export function mockShap(patient, seed) {
   const norm = normalizePatient(patient);
   const rnd = seededRandom(seed + 11);
+
   return FEATURES.map((f) => {
-    const base = (norm[f.key] - 0.5) * 2 * FEATURE_WEIGHT[f.key];
-    const noise = (rnd() - 0.5) * 0.12;
-    return { feature: f.key, label: f.label, value: round(base + noise) };
-  }).sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
+    const direction = RISK_DIRECTION[f.key];
+
+    let base = 0;
+
+    if (direction !== 0) {
+      base =
+        (norm[f.key] - 0.5) *
+        2 *
+        FEATURE_WEIGHT[f.key] *
+        direction;
+    }
+
+    const noise =
+      (rnd() - 0.5) * 0.12;
+
+    return {
+      feature: f.key,
+      label: f.label,
+      value: round(base + noise),
+    };
+  }).sort(
+    (a, b) =>
+      Math.abs(b.value) -
+      Math.abs(a.value)
+  );
 }
 
 /**
@@ -113,11 +271,37 @@ export function mockShap(patient, seed) {
 export function mockLime(patient, seed) {
   const norm = normalizePatient(patient);
   const rnd = seededRandom(seed + 97);
+
   return FEATURES.map((f) => {
-    const base = (norm[f.key] - 0.5) * 2 * FEATURE_WEIGHT[f.key];
-    const drift = (rnd() - 0.5) * 0.28; // LIME's local-surrogate noise
-    return { feature: f.key, label: f.label, value: round(base * (0.85 + rnd() * 0.3) + drift) };
-  }).sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
+    const direction = RISK_DIRECTION[f.key];
+
+    let base = 0;
+
+    if (direction !== 0) {
+      base =
+        (norm[f.key] - 0.5) *
+        2 *
+        FEATURE_WEIGHT[f.key] *
+        direction;
+    }
+
+    const drift =
+      (rnd() - 0.5) * 0.28;
+
+    return {
+      feature: f.key,
+      label: f.label,
+      value: round(
+        base *
+          (0.85 + rnd() * 0.3) +
+          drift
+      ),
+    };
+  }).sort(
+    (a, b) =>
+      Math.abs(b.value) -
+      Math.abs(a.value)
+  );
 }
 
 function round(n) {
@@ -191,15 +375,30 @@ export function runFullPipeline(patient) {
 }
 
 export const DEFAULT_PATIENT = {
+  // Identification
   name: "",
   patientId: "",
-  age: 45,
-  gender: "Female",
-  pregnancies: 2,
-  glucose: 120,
-  bloodPressure: 74,
-  skinThickness: 24,
-  insulin: 90,
-  bmi: 27.5,
-  dpf: 0.42,
+
+  // Model features
+  HighBP: 0,
+  HighChol: 0,
+  CholCheck: 1,
+  BMI: 25.0,
+  Smoker: 0,
+  Stroke: 0,
+  HeartDiseaseorAttack: 0,
+  PhysActivity: 1,
+  Fruits: 1,
+  Veggies: 1,
+  HvyAlcoholConsump: 0,
+  AnyHealthcare: 1,
+  NoDocbcCost: 0,
+  GenHlth: 3,
+  MentHlth: 0,
+  PhysHlth: 0,
+  DiffWalk: 0,
+  Sex: 0,
+  Age: 6,
+  Education: 4,
+  Income: 4,
 };
