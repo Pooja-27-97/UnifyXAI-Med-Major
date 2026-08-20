@@ -38,8 +38,7 @@ export default function Dashboard() {
         <StatCard
           icon={Clock} tint="amber" label="Latest Prediction"
           value={latest ? latest.result.prediction : "—"}
-          sub={latest ? new Date(latest.timestamp).toLocaleString() : "No predictions yet"}
-        />
+          sub={latest ? `Last updated · ${new Date(latest.timestamp).toLocaleString()}` : "No predictions yet"}        />
       </div>
 
       <div className="grid grid-2" style={{ alignItems: "stretch" }}>
@@ -54,10 +53,27 @@ export default function Dashboard() {
           <p style={{ fontSize: 13, color: "var(--ink-soft)", lineHeight: 1.6, marginBottom: 18 }}>
             Enter patient health and lifestyle information once and receive a diabetes prediction alongside a clear, doctor-friendly explanation powered by SHAP and LIME.
           </p>
-          <h4>✔️ Random Forest prediction</h4>
-          <h4>✔️ SHAP explanation</h4>
-          <h4>✔️ LIME explanation</h4>
-          <h4>✔️ Unified XAI analysis</h4> <br /><br />
+          <div style={{ marginBottom: 22 }}>
+          <div
+            style={{
+              fontSize: 12,
+              fontWeight: 700,
+              color: "var(--ink)",
+              marginBottom: 10,
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+            }}
+          >
+            Explainability Pipeline
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <PipelineStatus label="Random Forest" status="Ready" ready />
+            <PipelineStatus label="SHAP Explanation" status="Ready" ready />
+            <PipelineStatus label="LIME Explanation" status="Coming Soon" />
+            <PipelineStatus label="Unified XAI" status="Coming Soon" />
+          </div>
+        </div>
           <button className="btn btn-primary btn-lg btn-block" onClick={() => navigate("/predict")}>
             <Plus size={17} /> Start New Prediction
           </button>
@@ -90,7 +106,8 @@ export default function Dashboard() {
                 >
                   <div style={{ minWidth: 0 }}>
                     <p style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>
-                      {h.patient.name || "Unnamed Patient"} {h.patient.patientId && `· ${h.patient.patientId}`}
+                      {h.patient.name || `Patient #${String(total - i).padStart(3, "0")}`}
+                      {h.patient.patientId && ` · ${h.patient.patientId}`}                    
                     </p>
                     <span style={{ fontSize: 11.5, color: "var(--muted)" }}>{new Date(h.timestamp).toLocaleString()}</span>
                   </div>
@@ -115,6 +132,42 @@ function EmptyHistory({ onStart }) {
         No predictions yet. Run your first patient through the pipeline to see results here.
       </p>
       <button className="btn btn-secondary" onClick={onStart}>Run first prediction</button>
+    </div>
+  );
+}
+
+function PipelineStatus({ label, status, ready = false }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "8px 10px",
+        border: "1px solid var(--line)",
+        borderRadius: 8,
+        background: "var(--surface)",
+      }}
+    >
+      <span
+        style={{
+          fontSize: 12.5,
+          color: "var(--ink-soft)",
+        }}
+      >
+        {label}
+      </span>
+
+      <span
+        style={{
+          fontSize: 11.5,
+          fontWeight: 600,
+          color: ready ? "var(--green-700)" : "var(--muted)",
+        }}
+      >
+        {ready ? "✓ " : "○ "}
+        {status}
+      </span>
     </div>
   );
 }
