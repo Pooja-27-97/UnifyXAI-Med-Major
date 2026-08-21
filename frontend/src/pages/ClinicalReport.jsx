@@ -35,7 +35,7 @@ export default function ClinicalReport() {
   return (
     <Layout
       eyebrow="Clinical Report"
-      title="Diabetes Risk & Explainability Report"
+      title="Diabetes Prediction & Explainability Report"
       right={
         <button className="btn btn-primary" onClick={handleExportPdf}>
           <Download size={15} /> Export PDF
@@ -60,10 +60,25 @@ export default function ClinicalReport() {
 
         <ReportSection title="Patient Information">
           <div className="grid grid-4">
-            <ReportField label="Name" value={patient.name || "Unnamed Patient"} />
-            <ReportField label="Patient ID" value={patient.patientId || "—"} />
-            <ReportField label="Age" value={`${patient.age} yrs`} />
-            <ReportField label="Gender" value={patient.gender} />
+            <ReportField
+              label="Name"
+              value={patient.name || "Patient"}
+            />
+
+            <ReportField
+              label="Patient ID"
+              value={patient.patientId || "—"}
+            />
+
+            <ReportField
+              label="Sex"
+              value={getSexLabel(patient.Sex)}
+            />
+
+            <ReportField
+              label="Age Group"
+              value={getAgeGroupLabel(patient.Age)}
+            />
           </div>
         </ReportSection>
 
@@ -73,6 +88,50 @@ export default function ClinicalReport() {
             <ReportField label="Probability" value={`${(result.probability * 100).toFixed(1)}%`} />
             <ReportField label="Risk Level" value={<RiskBadge level={result.riskLevel} />} />
             <ReportField label="Attending Clinician" value={user?.name || "—"} />
+          </div>
+        </ReportSection>
+
+        <ReportSection title="Patient Health Profile">
+          <div className="grid grid-4">
+            <ReportField
+              label="BMI"
+              value={`${Number(patient.BMI).toFixed(1)} kg/m²`}
+            />
+
+            <ReportField
+              label="General Health"
+              value={getGeneralHealthLabel(patient.GenHlth)}
+            />
+
+            <ReportField
+              label="High Blood Pressure"
+              value={yesNo(patient.HighBP)}
+            />
+
+            <ReportField
+              label="High Cholesterol"
+              value={yesNo(patient.HighChol)}
+            />
+
+            <ReportField
+              label="Physical Activity"
+              value={yesNo(patient.PhysActivity)}
+            />
+
+            <ReportField
+              label="Smoker"
+              value={yesNo(patient.Smoker)}
+            />
+
+            <ReportField
+              label="Mental Health"
+              value={`${patient.MentHlth} days`}
+            />
+
+            <ReportField
+              label="Physical Health"
+              value={`${patient.PhysHlth} days`}
+            />
           </div>
         </ReportSection>
 
@@ -91,11 +150,11 @@ export default function ClinicalReport() {
         <ReportSection title="Reliability Scores">
           <div className="grid grid-2">
             <ReportField label="Agreement Score" value={`${unified.agreementScore.toFixed(1)}%`} />
-            <ReportField label="Confidence Score" value={`${unified.confidenceScore.toFixed(1)}%`} />
+            <ReportField label="Explanation Confidence" value={`${unified.confidenceScore.toFixed(1)}%`}/>
           </div>
         </ReportSection>
 
-        <ReportSection title="Final Unified Explanation" last>
+        <ReportSection title="Unified Explanation Summary" last>
           <p style={{ fontSize: 13, lineHeight: 1.75, color: "var(--ink-soft)", background: "var(--surface-tint)", padding: 16, borderRadius: 10 }}>
             {summary}
           </p>
@@ -152,4 +211,44 @@ function FeatureMiniTable({ rows, accent }) {
       </table>
     </div>
   );
+}
+
+function getSexLabel(value) {
+  return Number(value) === 1 ? "Male" : "Female";
+}
+
+function getAgeGroupLabel(value) {
+  const groups = {
+    1: "18–24",
+    2: "25–29",
+    3: "30–34",
+    4: "35–39",
+    5: "40–44",
+    6: "45–49",
+    7: "50–54",
+    8: "55–59",
+    9: "60–64",
+    10: "65–69",
+    11: "70–74",
+    12: "75–79",
+    13: "80+",
+  };
+
+  return groups[value] || "Not specified";
+}
+
+function getGeneralHealthLabel(value) {
+  const labels = {
+    1: "Excellent",
+    2: "Very Good",
+    3: "Good",
+    4: "Fair",
+    5: "Poor",
+  };
+
+  return labels[value] || "Not specified";
+}
+
+function yesNo(value) {
+  return Number(value) === 1 ? "Yes" : "No";
 }
