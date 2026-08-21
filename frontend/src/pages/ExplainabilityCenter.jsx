@@ -165,7 +165,7 @@ function ExplainerPane({ title, desc, color, data }) {
           <p>{desc}</p>
         </div>
       </div>
-      <SingleImportanceChart data={data} color={color} height={340} />
+      <SingleImportanceChart data={data} color={color} height={620} />
     </div>
   );
 }
@@ -233,8 +233,7 @@ function UnifiedPane({ current }) {
           </div>
           <SingleImportanceChart
             data={unified.ranking.map((r) => ({ label: r.label, value: r.unified }))}
-            color="var(--unified)"
-            height={340}
+            height={620}
           />
         </div>
         <SummaryCard summary={summary} />
