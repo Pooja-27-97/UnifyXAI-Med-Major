@@ -297,3 +297,25 @@
   .print-only { display: block; }
   body { background: white; }
 }
+
+.mini-result {
+  min-width: 105px;
+  padding: 10px 13px;
+  border-radius: 10px;
+  background: var(--surface-tint);
+}
+
+.mini-result span {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+
+.mini-result strong {
+  font-size: 13px;
+  font-weight: 700;
+}

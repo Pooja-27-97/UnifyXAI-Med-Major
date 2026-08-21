@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { BarChart3, Waypoints, Layers3, Sparkles, Plus, ScatterChart, CheckCircle2, XCircle } from "lucide-react";
 import Layout from "../components/Layout.jsx";
@@ -39,6 +39,77 @@ export default function ExplainabilityCenter() {
 
   return (
     <Layout eyebrow="Explainability Center" title={`Why "${result.prediction}"?`}>
+      <div
+        className="card card-pad"
+        style={{ marginBottom: 18 }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 20,
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            <p
+              style={{
+                fontSize: 11,
+                color: "var(--muted)",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                marginBottom: 5,
+              }}
+            >
+              Current Patient
+            </p>
+
+            <p style={{ fontSize: 17, fontWeight: 700 }}>
+              {patient.name || patient.patientId || "Patient"}
+            </p>
+
+            <p
+              style={{
+                fontSize: 12.5,
+                color: "var(--muted)",
+                marginTop: 3,
+              }}
+            >
+              {getSexLabel(patient.Sex)} · Age Group{" "}
+              {getAgeGroupLabel(patient.Age)}
+              {patient.patientId && ` · ID ${patient.patientId}`}
+            </p>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              flexWrap: "wrap",
+            }}
+          >
+            <div className="mini-result">
+              <span>Prediction</span>
+              <strong>{result.prediction}</strong>
+            </div>
+
+            <div className="mini-result">
+              <span>Probability</span>
+              <strong>
+                {(result.probability * 100).toFixed(1)}%
+              </strong>
+            </div>
+
+            <div className="mini-result">
+              <span>Risk Level</span>
+              <strong>{result.riskLevel}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
       <div className="card card-pad" style={{ marginBottom: 18 }}>
         <div className="tag-row" style={{ marginBottom: 4 }}>
           {TABS.map((t) => {
@@ -126,7 +197,12 @@ function Overview({ current }) {
           </div>
           <div style={{ display: "flex", justifyContent: "space-around", flex: 1, alignItems: "center" }}>
             <ScoreRing value={unified.agreementScore} label="Agreement" color="var(--teal-600)" size={104} />
-            <ScoreRing value={unified.confidenceScore} label="Confidence" color="var(--unified)" size={104} />
+            <ScoreRing
+              value={unified.confidenceScore}
+              label="Explanation Confidence"
+              color="var(--unified)"
+              size={104}
+            />
           </div>
         </div>
       </div>
@@ -231,7 +307,7 @@ function SummaryCard({ summary }) {
     <div className="card card-pad" style={{ background: "linear-gradient(160deg, var(--blue-900), #123A8F)", color: "white", border: "none" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
         <Sparkles size={17} />
-        <h3 style={{ fontSize: 14, color: "white" }}>AI-Generated Explanation Summary</h3>
+        <h3 style={{ fontSize: 14, color: "white" }}>Explanation Summary</h3>
       </div>
       <p style={{ fontSize: 13, lineHeight: 1.7, color: "rgba(255,255,255,0.92)" }}>{summary}</p>
     </div>
@@ -271,4 +347,28 @@ function UnifiedRankingList({ ranking, compact }) {
       </div>
     </div>
   );
+}
+
+function getSexLabel(value) {
+  return Number(value) === 1 ? "Male" : "Female";
+}
+
+function getAgeGroupLabel(value) {
+  const groups = {
+    1: "18–24",
+    2: "25–29",
+    3: "30–34",
+    4: "35–39",
+    5: "40–44",
+    6: "45–49",
+    7: "50–54",
+    8: "55–59",
+    9: "60–64",
+    10: "65–69",
+    11: "70–74",
+    12: "75–79",
+    13: "80+",
+  };
+
+  return groups[value] || "Not specified";
 }

@@ -141,6 +141,49 @@ export default function PredictionResult() {
             value={`${patient.PhysHlth ?? 0} days`}
           />
         </div>
+        </div>
+      <div className="card card-pad">
+        <div className="card-head">
+          <div>
+            <h3>Explore the Explanation</h3>
+            <p>
+              Choose how you'd like to inspect why the model made this call
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-3">
+          <ActionTile
+            icon={BarChart3}
+            color="var(--shap)"
+            title="View SHAP"
+            desc="Game-theoretic feature attribution for this prediction."
+            onClick={() => navigate("/explainability?tab=shap")}
+          />
+
+          <ActionTile
+            icon={Waypoints}
+            color="var(--lime)"
+            title="View LIME"
+            desc="Local surrogate model explanation around this patient."
+            onClick={() => navigate("/explainability?tab=lime")}
+          />
+
+          <ActionTile
+            icon={Layers3}
+            color="var(--unified)"
+            title="View Unified Explanation"
+            desc="SHAP + LIME reconciled into one doctor-friendly ranking."
+            onClick={() => navigate("/explainability?tab=unified")}
+          />
+        </div>
+
+        <button
+          className="btn btn-secondary"
+          style={{ marginTop: 16 }}
+          onClick={() => navigate("/report")}
+        >
+          <ClipboardList size={15} /> Generate Clinical Report
+        </button>
       </div>
     </Layout>
   );
