@@ -77,10 +77,10 @@ print("\nPredictions generated successfully!")
 
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
-accuracy = accuracy_score(y_test, y_pred)
-precision = precision_score(y_test, y_pred)
-recall = recall_score(y_test, y_pred)
-f1 = f1_score(y_test, y_pred)
+accuracy = accuracy_score(y_test, y_pred) #Out of all predictions, how many were correct
+precision = precision_score(y_test, y_pred) # how many were actually diabetic?
+recall = recall_score(y_test, y_pred) # Of all actually diabetic patients, how many did the model correctly identify?
+f1 = f1_score(y_test, y_pred) # Balance between precision and recall.
 
 print("\nModel Evaluation:")
 print("Accuracy :", accuracy)
