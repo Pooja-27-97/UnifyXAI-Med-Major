@@ -6,13 +6,13 @@ import shap
 # LOAD SAVED MODEL
 # ==========================================
 
-model = joblib.load("random_forest.pkl")
+model = joblib.load("../models/random_forest.pkl")
 
 # Load scaler
-scaler = joblib.load("scaler.pkl")
+scaler = joblib.load("../models/scaler.pkl")
 
 # Load feature names
-feature_names = joblib.load("feature_names.pkl")
+feature_names = joblib.load("../models/feature_names.pkl")
 
 print("Saved model loaded successfully!")
 print("Scaler loaded successfully!")
