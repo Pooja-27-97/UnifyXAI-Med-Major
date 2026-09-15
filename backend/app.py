@@ -19,6 +19,12 @@ import shap
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
+from explainers.shap_explanation import explain_patient as explain_shap_patient
+from explainers.lime_explanation import explain_patient as explain_lime_patient
+from explainers.unified_explainer import (
+    unify_explanations,
+    build_unified_summary,
+)
 
 # -------------------------------------------------------------------------
 # Flask setup
@@ -336,6 +342,7 @@ def predict():
             "details": str(e),
         }), 500
 
+
 @app.post("/api/explain/shap")
 def explain_shap():
 
@@ -347,7 +354,7 @@ def explain_shap():
                 "error": "Request body is empty."
             }), 400
 
-        shap_values = run_shap(patient)
+        shap_values = explain_shap_patient(patient)
 
         return jsonify(shap_values)
 
@@ -359,13 +366,211 @@ def explain_shap():
 
     except Exception as e:
 
-        print("SHAP error:", e)
+        print("SHAP explanation error:", e)
 
         return jsonify({
             "error": "SHAP explanation failed.",
             "details": str(e),
         }), 500
+        
 
+@app.post("/api/explain/lime")
+def explain_lime():
+
+    try:
+        patient = request.get_json(force=True)
+
+        if not patient:
+            return jsonify({
+                "error": "Request body is empty."
+            }), 400
+
+        lime_values = explain_lime_patient(patient)
+
+        return jsonify(lime_values)
+
+    except ValueError as e:
+
+        return jsonify({
+            "error": str(e)
+        }), 400
+
+    except Exception as e:
+
+        print("LIME explanation error:", e)
+
+        return jsonify({
+            "error": "LIME explanation failed.",
+            "details": str(e),
+        }), 500
+        
+        
+@app.post("/api/explain/unified")
+def explain_unified():
+
+    try:
+        patient = request.get_json(force=True)
+
+        if not patient:
+            return jsonify({
+                "error": "Request body is empty."
+            }), 400
+
+        # -------------------------------------------------------------
+        # Generate REAL SHAP explanation
+        # -------------------------------------------------------------
+
+        shap_values = explain_shap_patient(patient)
+
+        # -------------------------------------------------------------
+        # Generate REAL LIME explanation
+        # -------------------------------------------------------------
+
+        lime_values = explain_lime_patient(patient)
+
+        # -------------------------------------------------------------
+        # Combine SHAP + LIME
+        # -------------------------------------------------------------
+
+        unified_result = unify_explanations(
+            shap_values,
+            lime_values
+        )
+
+        return jsonify(unified_result)
+
+    except ValueError as e:
+
+        return jsonify({
+            "error": str(e)
+        }), 400
+
+    except Exception as e:
+
+        print("Unified explanation error:", e)
+
+        return jsonify({
+            "error": "Unified explanation failed.",
+            "details": str(e),
+        }), 500
+        
+        
+@app.post("/api/pipeline/run")
+def pipeline_run():
+
+    try:
+        patient = request.get_json(force=True)
+
+        if not patient:
+            return jsonify({
+                "error": "Request body is empty."
+            }), 400
+
+        # -------------------------------------------------------------
+        # 1. Prepare patient
+        # -------------------------------------------------------------
+
+        X = prepare_input(patient)
+
+        # -------------------------------------------------------------
+        # 2. Scale patient
+        # -------------------------------------------------------------
+
+        X_scaled = scaler.transform(X)
+
+        # -------------------------------------------------------------
+        # 3. Random Forest prediction
+        # -------------------------------------------------------------
+
+        prediction_class = int(
+            model.predict(X_scaled)[0]
+        )
+
+        probabilities = model.predict_proba(
+            X_scaled
+        )[0]
+
+        diabetes_probability = float(
+            probabilities[1]
+        )
+
+        no_diabetes_probability = float(
+            probabilities[0]
+        )
+
+        prediction = (
+            "Diabetic"
+            if prediction_class == 1
+            else "Non-Diabetic"
+        )
+
+        risk_level = get_risk_level(
+            diabetes_probability
+        )
+
+        result = {
+            "prediction": prediction,
+            "probability": diabetes_probability,
+            "noDiabetesProbability": no_diabetes_probability,
+            "diabetesProbability": diabetes_probability,
+            "riskLevel": risk_level,
+            "predictedClass": prediction_class,
+        }
+
+        # -------------------------------------------------------------
+        # 4. SHAP
+        # -------------------------------------------------------------
+
+        shap_values = explain_shap_patient(
+            patient
+        )
+
+        # -------------------------------------------------------------
+        # 5. LIME
+        # -------------------------------------------------------------
+
+        lime_values = explain_lime_patient(
+            patient
+        )
+
+        # -------------------------------------------------------------
+        # 6. Unified explanation
+        # -------------------------------------------------------------
+
+        unified = unify_explanations(
+            shap_values,
+            lime_values
+        )
+
+        # -------------------------------------------------------------
+        # 7. Return complete pipeline result
+        # -------------------------------------------------------------
+
+        return jsonify({
+            "patient": patient,
+            "result": result,
+            "shap": shap_values,
+            "lime": lime_values,
+            "unified": unified,
+            "timestamp": datetime.now(
+                timezone.utc
+            ).isoformat(),
+        })
+
+    except ValueError as e:
+
+        return jsonify({
+            "error": str(e)
+        }), 400
+
+    except Exception as e:
+
+        print("Pipeline error:", e)
+
+        return jsonify({
+            "error": "Pipeline execution failed.",
+            "details": str(e),
+        }), 500
 # -------------------------------------------------------------------------
 # Main
 # -------------------------------------------------------------------------

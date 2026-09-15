@@ -1,256 +1,264 @@
-import pandas as pd
 import joblib
+import numpy as np
+import pandas as pd
 import shap
-
-# ==========================================
-# LOAD SAVED MODEL
-# ==========================================
-
-model = joblib.load("../models/random_forest.pkl")
-
-# Load scaler
-scaler = joblib.load("../models/scaler.pkl")
-
-# Load feature names
-feature_names = joblib.load("../models/feature_names.pkl")
-
-print("Saved model loaded successfully!")
-print("Scaler loaded successfully!")
-print("Feature names loaded successfully!")
+from pathlib import Path
 
 
-# ==========================================
-# LOAD DATASET
-# ==========================================
+# ============================================================
+# PATHS
+# ============================================================
 
-df = pd.read_csv("../data/diabetes.csv")
+BASE_DIR = Path(__file__).resolve().parent.parent
+MODEL_DIR = BASE_DIR / "models"
 
-# Separate features and target
-X = df.drop("Diabetes", axis=1)
-y = df["Diabetes"]
-
-# Use the same feature order as training
-X = X[feature_names]
-
-# Scale the data using the SAVED scaler
-X_scaled = scaler.transform(X)
-
-print("Dataset loaded and scaled successfully!")
-print("Dataset shape:", X_scaled.shape)
+MODEL_PATH = MODEL_DIR / "random_forest.pkl"
+SCALER_PATH = MODEL_DIR / "scaler.pkl"
+FEATURE_NAMES_PATH = MODEL_DIR / "feature_names.pkl"
 
 
-# ==========================================
+# ============================================================
+# LOAD MODEL ARTIFACTS
+# ============================================================
+
+model = joblib.load(MODEL_PATH)
+scaler = joblib.load(SCALER_PATH)
+feature_names = joblib.load(FEATURE_NAMES_PATH)
+
+print("SHAP: Model loaded successfully!")
+print("SHAP: Scaler loaded successfully!")
+print("SHAP: Feature names loaded successfully!")
+
+
+# ============================================================
 # CREATE SHAP EXPLAINER
-# ==========================================
+# ============================================================
 
 explainer = shap.TreeExplainer(model)
 
-print("SHAP TreeExplainer created successfully!")
+print("SHAP: TreeExplainer created successfully!")
 
 
-# ==========================================
-# SELECT SMALL SAMPLE FOR SHAP
-# ==========================================
+# ============================================================
+# EXPECTED FEATURES
+# ============================================================
 
-X_shap = X_scaled[:100]
+EXPECTED_FEATURES = [
+    "HighBP",
+    "HighChol",
+    "CholCheck",
+    "BMI",
+    "Smoker",
+    "Stroke",
+    "HeartDiseaseorAttack",
+    "PhysActivity",
+    "Fruits",
+    "Veggies",
+    "HvyAlcoholConsump",
+    "AnyHealthcare",
+    "NoDocbcCost",
+    "GenHlth",
+    "MentHlth",
+    "PhysHlth",
+    "DiffWalk",
+    "Sex",
+    "Age",
+    "Education",
+    "Income",
+]
 
-print("\nCalculating SHAP values for 100 samples...")
+
+# ============================================================
+# FRONTEND-FRIENDLY LABELS
+# ============================================================
+
+FEATURE_LABELS = {
+    "HighBP": "High Blood Pressure",
+    "HighChol": "High Cholesterol",
+    "CholCheck": "Cholesterol Check",
+    "BMI": "BMI",
+    "Smoker": "Smoker",
+    "Stroke": "Stroke",
+    "HeartDiseaseorAttack": "Heart Disease or Heart Attack",
+    "PhysActivity": "Physical Activity",
+    "Fruits": "Fruit Consumption",
+    "Veggies": "Vegetable Consumption",
+    "HvyAlcoholConsump": "Heavy Alcohol Consumption",
+    "AnyHealthcare": "Healthcare Coverage",
+    "NoDocbcCost": "Unable to See Doctor Due to Cost",
+    "GenHlth": "General Health",
+    "MentHlth": "Mental Health",
+    "PhysHlth": "Physical Health",
+    "DiffWalk": "Difficulty Walking",
+    "Sex": "Sex",
+    "Age": "Age Group",
+    "Education": "Education",
+    "Income": "Income",
+}
 
 
-# ==========================================
-# CALCULATE SHAP VALUES
-# ==========================================
+# ============================================================
+# VALIDATE FEATURES
+# ============================================================
 
-shap_values = explainer.shap_values(X_shap)
-
-print("SHAP values generated successfully!")
-
-
-# ==========================================
-# GLOBAL SHAP FEATURE IMPORTANCE
-# ==========================================
-
-import numpy as np
-
-# Convert SHAP values to numpy array
-shap_array = np.asarray(shap_values)
-
-print("\nSHAP output shape:", shap_array.shape)
-
-# Handle SHAP output dimensions
-if shap_array.ndim == 3:
-    # Shape: (samples, features, classes)
-    # Select class 1 (Diabetes = 1)
-    values = shap_array[:, :, 1]
-
-elif shap_array.ndim == 2:
-    # Shape: (samples, features)
-    values = shap_array
-
-else:
+if feature_names != EXPECTED_FEATURES:
     raise ValueError(
-        f"Unexpected SHAP output shape: {shap_array.shape}"
+        "Feature names in feature_names.pkl do not match "
+        "the expected 21-feature model input order."
     )
 
-# Calculate mean absolute SHAP value for each feature
-mean_abs_shap = np.abs(values).mean(axis=0)
 
-# Create feature importance table
-feature_importance = pd.DataFrame({
-    "Feature": feature_names,
-    "Mean_Abs_SHAP": mean_abs_shap
-})
+# ============================================================
+# VALIDATE PATIENT INPUT
+# ============================================================
 
-# Sort from most important to least important
-feature_importance = feature_importance.sort_values(
-    by="Mean_Abs_SHAP",
-    ascending=False
-)
+def validate_patient(patient):
 
-print("\nGlobal SHAP Feature Importance:")
-print(feature_importance.to_string(index=False))
+    missing = [
+        feature
+        for feature in EXPECTED_FEATURES
+        if feature not in patient
+    ]
 
-
-# ==========================================
-# GLOBAL SHAP BAR CHART
-# ==========================================
-
-import matplotlib.pyplot as plt
-
-# Select top 15 features
-top_features = feature_importance.head(15)
-
-plt.figure(figsize=(10, 7))
-
-plt.barh(
-    top_features["Feature"][::-1],
-    top_features["Mean_Abs_SHAP"][::-1]
-)
-
-plt.xlabel("Mean Absolute SHAP Value")
-plt.ylabel("Feature")
-plt.title("Global SHAP Feature Importance")
-
-plt.tight_layout()
-
-plt.savefig("global_shap_importance.png", dpi=300)
-
-plt.show()
+    if missing:
+        raise ValueError(
+            f"Missing required features: {', '.join(missing)}"
+        )
 
 
-# ==========================================
-# PHASE 3.6 - INDIVIDUAL SHAP EXPLANATION
-# ==========================================
+# ============================================================
+# PREPARE PATIENT INPUT
+# ============================================================
 
-# Select one patient
-patient_index = 0
+def prepare_input(patient):
 
-patient_data = X_shap[patient_index:patient_index + 1]
+    validate_patient(patient)
 
-# Get model prediction
-patient_prediction = model.predict(patient_data)[0]
+    values = []
 
-# Get prediction probability
-patient_probability = model.predict_proba(patient_data)[0]
+    for feature in EXPECTED_FEATURES:
 
-print("\nIndividual Patient Explanation")
-print("--------------------------------")
-print("Patient index:", patient_index)
-print("Predicted class:", patient_prediction)
-print("Probability of No Diabetes:", patient_probability[0])
-print("Probability of Diabetes:", patient_probability[1])
+        try:
+            values.append(float(patient[feature]))
 
-# Calculate SHAP values for this patient
-patient_shap = explainer.shap_values(patient_data)
+        except (TypeError, ValueError):
 
-print("\nIndividual SHAP values generated successfully!")
+            raise ValueError(
+                f"Invalid value for feature '{feature}'. "
+                "Expected a numeric value."
+            )
 
-
-# ==========================================
-# INDIVIDUAL SHAP FEATURE CONTRIBUTIONS
-# ==========================================
-
-# Convert SHAP output to numpy array
-patient_shap_array = np.asarray(patient_shap)
-
-print("\nIndividual SHAP output shape:", patient_shap_array.shape)
-
-# Handle SHAP output dimensions
-if patient_shap_array.ndim == 3:
-    # Shape: (samples, features, classes)
-    patient_values = patient_shap_array[0, :, 1]
-
-elif patient_shap_array.ndim == 2:
-    # Shape: (samples, features)
-    patient_values = patient_shap_array[0]
-
-else:
-    raise ValueError(
-        f"Unexpected SHAP output shape: {patient_shap_array.shape}"
+    X = pd.DataFrame(
+        [values],
+        columns=EXPECTED_FEATURES
     )
 
-# Get original patient values
-patient_original = X.iloc[patient_index]
-
-# Create explanation table
-patient_explanation = pd.DataFrame({
-    "Feature": feature_names,
-    "Patient_Value": patient_original.values,
-    "SHAP_Value": patient_values
-})
-
-# Add direction of contribution
-patient_explanation["Effect"] = patient_explanation["SHAP_Value"].apply(
-    lambda x: "Increases Diabetes prediction"
-    if x > 0
-    else "Decreases Diabetes prediction"
-)
-
-# Sort by absolute SHAP contribution
-patient_explanation["Absolute_SHAP"] = np.abs(
-    patient_explanation["SHAP_Value"]
-)
-
-patient_explanation = patient_explanation.sort_values(
-    by="Absolute_SHAP",
-    ascending=False
-)
-
-print("\nIndividual Patient SHAP Explanation:")
-print(
-    patient_explanation[
-        ["Feature", "Patient_Value", "SHAP_Value", "Effect"]
-    ].to_string(index=False)
-)
+    return X
 
 
-# ==========================================
-# SHAP WATERFALL PLOT
-# ==========================================
+# ============================================================
+# EXPLAIN ONE PATIENT
+# ============================================================
 
-# Create SHAP Explanation object
-patient_explanation_object = explainer(
-    patient_data
-)
+def explain_patient(patient):
 
-# Select the Diabetes = 1 class
-patient_explanation_class1 = patient_explanation_object[0, :, 1]
+    """
+    Generate SHAP explanation for one patient.
 
-# Create waterfall plot
-shap.plots.waterfall(
-    patient_explanation_class1,
-    max_display=15,
-    show=False
-)
+    Input:
+        patient -> dictionary containing all 21 features
 
-plt.tight_layout()
+    Output:
+        list of dictionaries containing:
+        feature
+        label
+        value
+        effect
+    """
 
-plt.savefig(
-    "individual_patient_shap.png",
-    dpi=300,
-    bbox_inches="tight"
-)
+    # --------------------------------------------------------
+    # Prepare patient
+    # --------------------------------------------------------
 
-plt.show()
+    X = prepare_input(patient)
 
-print("\nIndividual SHAP waterfall plot saved successfully!")
+    # --------------------------------------------------------
+    # Apply the SAME scaler used during training
+    # --------------------------------------------------------
+
+    X_scaled = scaler.transform(X)
+
+    # --------------------------------------------------------
+    # Calculate SHAP values
+    # --------------------------------------------------------
+
+    shap_output = explainer.shap_values(X_scaled)
+
+    # --------------------------------------------------------
+    # Handle SHAP versions
+    # --------------------------------------------------------
+
+    if isinstance(shap_output, list):
+
+        shap_values = shap_output[1][0]
+
+    else:
+
+        shap_array = np.asarray(shap_output)
+
+        if shap_array.ndim == 3:
+
+            # (samples, features, classes)
+
+            shap_values = shap_array[0, :, 1]
+
+        elif shap_array.ndim == 2:
+
+            # (samples, features)
+
+            shap_values = shap_array[0]
+
+        else:
+
+            raise ValueError(
+                f"Unexpected SHAP output shape: "
+                f"{shap_array.shape}"
+            )
+
+    # --------------------------------------------------------
+    # Create result
+    # --------------------------------------------------------
+
+    result = []
+
+    for feature, value in zip(
+        feature_names,
+        shap_values
+    ):
+
+        value = float(value)
+
+        result.append({
+            "feature": feature,
+            "label": FEATURE_LABELS.get(
+                feature,
+                feature
+            ),
+            "value": round(value, 6),
+            "effect": (
+                "Increases Diabetes prediction"
+                if value > 0
+                else "Decreases Diabetes prediction"
+            )
+        })
+
+    # --------------------------------------------------------
+    # Sort by strongest contribution
+    # --------------------------------------------------------
+
+    result.sort(
+        key=lambda x: abs(x["value"]),
+        reverse=True
+    )
+
+    return result
