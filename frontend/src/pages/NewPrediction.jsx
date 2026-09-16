@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { RotateCcw, FlaskConical, Loader2 } from "lucide-react";
 import Layout from "../components/Layout.jsx";
 import { useApp } from "../context/AppContext.jsx";
-import { DEFAULT_PATIENT, runFullPipeline } from "../data/mockEngine.js";
+import { DEFAULT_PATIENT } from "../data/mockEngine.js";
+import { api } from "../utils/api.js";
 
 const MODEL_FIELDS = [
   {
@@ -188,27 +189,81 @@ export default function NewPrediction() {
     setPatient(DEFAULT_PATIENT);
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
-    const normalized = { ...patient };
 
-    MODEL_FIELDS.forEach((field) => {
-      if (field.type === "number") {
-        normalized[field.key] = Number(patient[field.key]) || 0;
-      } else if (field.type === "select") {
-        normalized[field.key] = Number(patient[field.key]);
-      } else {
-        normalized[field.key] = Number(patient[field.key]) || 0;
-      }
-    });
-    // Simulated inference latency for the RF + SHAP + LIME + Unification pipeline.
-    setTimeout(() => {
-      const record = runFullPipeline(normalized);
+    try {
+      const normalized = { ...patient };
+
+      MODEL_FIELDS.forEach((field) => {
+        if (field.type === "number") {
+          normalized[field.key] = Number(patient[field.key]) || 0;
+        } else if (field.type === "select") {
+          normalized[field.key] = Number(patient[field.key]);
+        } else {
+          normalized[field.key] = Number(patient[field.key]) || 0;
+        }
+      });
+
+      // Run the complete real backend pipeline
+      const pipeline = await api.fullPipeline(normalized);
+
+      // Create the structure expected by the frontend
+      const record = {
+        ...pipeline,
+        summary: buildSummary(pipeline.result, pipeline.unified),
+      };
+
       addPrediction(record);
-      setLoading(false);
+
       navigate("/result");
-    }, 900);
+
+    } catch (error) {
+      console.error("Prediction pipeline failed:", error);
+
+      alert(
+        "Unable to generate prediction. Please make sure the Flask backend is running."
+      );
+
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function buildSummary(result, unified) {
+    const top3 = unified.ranking.slice(0, 3);
+
+    const direction = (value) =>
+      value >= 0 ? "increased" : "decreased";
+
+    const drivers = top3
+      .map(
+        (feature) =>
+          `${feature.label} (${direction(feature.unified)} risk)`
+      )
+      .join(", ");
+
+    let agreementNote;
+
+    if (unified.agreementScore >= 85) {
+      agreementNote =
+        "SHAP and LIME strongly agree on the leading contributing factors.";
+    } else if (unified.agreementScore >= 65) {
+      agreementNote =
+        "SHAP and LIME largely agree, with some differences between the methods.";
+    } else {
+      agreementNote =
+        "SHAP and LIME show some disagreement, so the explanation should be interpreted with additional clinical judgement.";
+    }
+
+    return (
+      `The model classifies this patient as ${result.prediction.toLowerCase()} ` +
+      `with a predicted probability of ${(result.probability * 100).toFixed(1)}%. ` +
+      `The leading contributing factors are ${drivers}. ` +
+      `${agreementNote} ` +
+      `Explanation confidence is ${unified.confidenceScore.toFixed(1)}%.`
+    );
   }
 
   return (

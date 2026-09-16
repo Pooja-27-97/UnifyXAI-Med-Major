@@ -15,7 +15,6 @@ from pathlib import Path
 
 import joblib
 import pandas as pd
-import shap
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
@@ -57,12 +56,6 @@ print("Loading trained model artifacts...")
 model = joblib.load(MODEL_PATH)
 scaler = joblib.load(SCALER_PATH)
 feature_names = joblib.load(FEATURE_NAMES_PATH)
-
-print("Creating SHAP TreeExplainer...")
-
-explainer = shap.TreeExplainer(model)
-
-print("SHAP TreeExplainer created successfully!")
 
 print("Random Forest model loaded successfully!")
 print("Scaler loaded successfully!")

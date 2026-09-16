@@ -19,16 +19,26 @@ export function AppProvider({ children }) {
   const [current, setCurrent] = useState(() => history[0] || null);
 
   useEffect(() => {
-    if (user) localStorage.setItem(AUTH_KEY, JSON.stringify(user));
-    else localStorage.removeItem(AUTH_KEY);
+    if (user) {
+      localStorage.setItem(AUTH_KEY, JSON.stringify(user));
+    } else {
+      localStorage.removeItem(AUTH_KEY);
+    }
   }, [user]);
 
   useEffect(() => {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 25)));
+    localStorage.setItem(
+      HISTORY_KEY,
+      JSON.stringify(history.slice(0, 25))
+    );
   }, [history]);
 
   function login(email) {
-    setUser({ email, name: email.split("@")[0].replace(/[._]/g, " "), role: "Clinician" });
+    setUser({
+      email,
+      name: email.split("@")[0].replace(/[._]/g, " "),
+      role: "Clinician",
+    });
   }
 
   function logout() {
@@ -36,16 +46,33 @@ export function AppProvider({ children }) {
   }
 
   function addPrediction(record) {
-    setHistory((prev) => [record, ...prev]);
+    setHistory((prev) => [record, ...prev].slice(0, 25));
     setCurrent(record);
   }
 
-  const value = { user, login, logout, history, current, setCurrent, addPrediction };
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+  const value = {
+    user,
+    login,
+    logout,
+    history,
+    current,
+    setCurrent,
+    addPrediction,
+  };
+
+  return (
+    <AppContext.Provider value={value}>
+      {children}
+    </AppContext.Provider>
+  );
 }
 
 export function useApp() {
   const ctx = useContext(AppContext);
-  if (!ctx) throw new Error("useApp must be used within AppProvider");
+
+  if (!ctx) {
+    throw new Error("useApp must be used within AppProvider");
+  }
+
   return ctx;
 }
