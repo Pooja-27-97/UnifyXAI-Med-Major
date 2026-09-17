@@ -78,7 +78,7 @@ export default function PredictionResult() {
           </div>
           <div style={{ display: "flex", justifyContent: "space-around", flex: 1, alignItems: "center" }}>
             <ScoreRing value={unified.agreementScore} label="Agreement Score" color="var(--teal-600)" />
-            <ScoreRing value={unified.confidenceScore} label="Confidence Score" color="var(--unified)" />
+            <ScoreRing value={unified.confidenceScore} label="Explanation Confidence" color="var(--unified)" />
           </div>
         </div>
       </div>

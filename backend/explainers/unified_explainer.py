@@ -238,60 +238,60 @@ def unify_explanations(shap_values, lime_values):
 # Doctor-friendly summary
 # -------------------------------------------------------------------------
 
-def build_unified_summary(unified_result):
+def build_unified_summary(result, unified):
+    ranking = unified.get("ranking", [])
 
-    ranking = unified_result["ranking"]
+    if not ranking:
+        return (
+            f"The model classifies this patient as {result['prediction'].lower()} "
+            f"with a predicted probability of {result['probability'] * 100:.1f}%."
+        )
 
+    # Top 3 unified contributors
     top_features = ranking[:3]
 
-    drivers = []
+    top_text = ", ".join(
+        f"{item['label']} "
+        f"({'increases' if item['unified'] > 0 else 'decreases'} diabetes prediction)"
+        for item in top_features
+        if item["unified"] != 0
+    )
 
-    for feature in top_features:
+    # Count meaningful directional disagreements
+    directional_disagreements = [
+        item
+        for item in ranking
+        if not item["sameSign"]
+        and abs(item["shap"]) >= 0.02
+        and abs(item["lime"]) >= 0.02
+    ]
 
-        if feature["unified"] >= 0:
-            direction = "increases"
-        else:
-            direction = "decreases"
+    disagreement_count = len(directional_disagreements)
 
-        drivers.append(
-            f'{feature["label"]} '
-            f'({direction} diabetes risk, '
-            f'impact {feature["unified"]:+.3f})'
-        )
-
-    driver_text = ", ".join(drivers)
-
-    agreement = unified_result["agreementScore"]
-    confidence = unified_result["confidenceScore"]
-
-    if agreement >= 85:
-
+    # Explanation agreement statement
+    if disagreement_count == 0:
         agreement_text = (
-            "SHAP and LIME strongly agree on the leading "
-            "risk drivers."
+            "SHAP and LIME show consistent directional agreement across "
+            "the evaluated features."
         )
-
-    elif agreement >= 65:
-
+    elif disagreement_count <= 2:
         agreement_text = (
-            "SHAP and LIME largely agree, with some "
-            "differences between the methods."
+            f"SHAP and LIME agree on the main contributing factors, "
+            f"although {disagreement_count} features show a meaningful "
+            f"directional difference between the two explainers."
         )
-
     else:
-
         agreement_text = (
-            "SHAP and LIME show notable disagreement "
-            "for some features. The explanation should "
-            "therefore be interpreted with additional "
-            "clinical judgement."
+            f"SHAP and LIME agree on several leading factors, but "
+            f"{disagreement_count} features show meaningful directional "
+            f"differences between the two explainers."
         )
 
     return (
-        f"The leading factors identified by the unified "
-        f"SHAP-LIME explanation are {driver_text}. "
+        f"The model classifies this patient as {result['prediction'].lower()} "
+        f"with a predicted probability of {result['probability'] * 100:.1f}%. "
+        f"The leading contributing factors are {top_text}. "
         f"{agreement_text} "
-        f"The explanation agreement score is "
-        f"{agreement:.1f}%, while the explanation "
-        f"confidence score is {confidence:.1f}%."
+        f"The explanation agreement score is {unified['agreementScore']:.1f}/100 "
+        f"and explanation confidence is {unified['confidenceScore']:.1f}/100."
     )
