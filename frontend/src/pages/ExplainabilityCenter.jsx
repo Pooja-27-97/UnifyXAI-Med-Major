@@ -179,7 +179,7 @@ function Overview({ current }) {
           <div className="card-head">
             <div>
               <h3>SHAP vs LIME vs Unified</h3>
-              <p>Per-feature comparison across all three explainability views</p>
+              <p>Top 8 features by unified importance across all three explainability views</p>
             </div>
             <div style={{ display: "flex", gap: 12 }}>
               <MethodDot color="var(--shap)" label="SHAP" />
@@ -187,7 +187,10 @@ function Overview({ current }) {
               <MethodDot color="var(--unified)" label="Unified" />
             </div>
           </div>
-          <TriCompareChart ranking={unified.ranking} height={360} />
+          <TriCompareChart
+            ranking={unified.ranking.slice(0, 8)}
+            height={400}
+          />
         </div>
 
         <div className="card card-pad" style={{ display: "flex", flexDirection: "column", gap: 18 }}>
