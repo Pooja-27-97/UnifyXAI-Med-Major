@@ -201,7 +201,7 @@ function Overview({ current }) {
           <div style={{ display: "flex", justifyContent: "space-around", flex: 1, alignItems: "center" }}>
             <ScoreRing value={unified.agreementScore} label="Agreement" color="var(--teal-600)" size={104} />
             <ScoreRing
-              value={unified.confidenceScore}
+              value={unified.consistencyScore}
               label="Explanation Confidence"
               color="var(--unified)"
               size={104}

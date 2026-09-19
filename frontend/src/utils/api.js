@@ -1,10 +1,9 @@
 // -----------------------------------------------------------------------
-// api.js — thin client for the future Flask backend.
+// api.js — client for the Flask ML backend.
 // -----------------------------------------------------------------------
-// Every endpoint below mirrors a route already stubbed in /backend/app.py.
-// Today the app runs entirely on the mock engine (src/data/mockEngine.js).
-// To go live: set VITE_USE_LIVE_API=true and implement the model/SHAP/LIME
-// loading in the Flask routes — no other frontend code needs to change.
+// These endpoints connect the React frontend to the real
+// Random Forest + SHAP + LIME + Unified Explainability pipeline.
+// -----------------------------------------------------------------------
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 const USE_LIVE_API = import.meta.env.VITE_USE_LIVE_API === "true";

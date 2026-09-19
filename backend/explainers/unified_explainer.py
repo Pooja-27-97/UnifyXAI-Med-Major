@@ -24,6 +24,21 @@ from math import isfinite
 def round_value(value, digits=4):
     return round(float(value), digits)
 
+def get_direction(value, threshold=0.02):
+    """
+    Classify an explanation value as positive, negative, or neutral.
+
+    Values close to zero are treated as neutral because their
+    directional contribution is small.
+    """
+
+    if abs(value) < threshold:
+        return "neutral"
+
+    if value > 0:
+        return "positive"
+
+    return "negative"
 
 # -------------------------------------------------------------------------
 # Unified explanation
@@ -121,19 +136,19 @@ def unify_explanations(shap_values, lime_values):
         # Average SHAP and LIME contribution
         unified_value = (shap_value + lime_value) / 2
 
-        # Direction agreement
-        #
-        # If either explanation is extremely close to zero,
-        # treat it as neutral rather than strong disagreement.
-        same_sign = (
-            (shap_value >= 0 and lime_value >= 0)
-            or
-            (shap_value < 0 and lime_value < 0)
-            or
-            abs(shap_value) < 0.02
-            or
-            abs(lime_value) < 0.02
-        )
+        shap_direction = get_direction(shap_value)
+        lime_direction = get_direction(lime_value)
+
+        if shap_direction == "neutral" or lime_direction == "neutral":
+            direction_match = "neutral"
+        else:
+            direction_match = (
+                "agree"
+                if shap_direction == lime_direction
+                else "diverge"
+            )
+
+        same_sign = direction_match == "agree"
 
         # Difference in contribution magnitude
         magnitude_difference = abs(
@@ -146,6 +161,11 @@ def unify_explanations(shap_values, lime_values):
             "shap": round_value(shap_value, 6),
             "lime": round_value(lime_value, 6),
             "unified": round_value(unified_value, 6),
+
+            "shapDirection": shap_direction,
+            "limeDirection": lime_direction,
+            "directionMatch": direction_match,
+
             "sameSign": same_sign,
             "magDiff": round_value(magnitude_difference, 6)
         })
@@ -171,7 +191,12 @@ def unify_explanations(shap_values, lime_values):
     for item in ranking:
 
         # Direction agreement
-        sign_score = 1.0 if item["sameSign"] else 0.0
+        if item["directionMatch"] == "agree":
+            sign_score = 1.0
+        elif item["directionMatch"] == "neutral":
+            sign_score = 0.5
+        else:
+            sign_score = 0.0
 
         # Magnitude agreement
         #
@@ -216,7 +241,7 @@ def unify_explanations(shap_values, lime_values):
         / len(squared_differences)
     )
 
-    confidence_score = max(
+    consistency_score  = max(
         0.0,
         100.0 - variance * 180.0
     )
@@ -227,8 +252,8 @@ def unify_explanations(shap_values, lime_values):
             agreement_score,
             1
         ),
-        "confidenceScore": round_value(
-            confidence_score,
+        "consistencyScore ": round_value(
+            consistency_score ,
             1
         )
     }
@@ -252,7 +277,8 @@ def build_unified_summary(result, unified):
 
     top_text = ", ".join(
         f"{item['label']} "
-        f"({'increases' if item['unified'] > 0 else 'decreases'} diabetes prediction)"
+        f"({'contributed toward a higher' if item['unified'] > 0 else 'contributed toward a lower'} "
+        f"model-estimated diabetes probability)"
         for item in top_features
         if item["unified"] != 0
     )
@@ -261,9 +287,7 @@ def build_unified_summary(result, unified):
     directional_disagreements = [
         item
         for item in ranking
-        if not item["sameSign"]
-        and abs(item["shap"]) >= 0.02
-        and abs(item["lime"]) >= 0.02
+        if item["directionMatch"] == "diverge"
     ]
 
     disagreement_count = len(directional_disagreements)
@@ -293,5 +317,5 @@ def build_unified_summary(result, unified):
         f"The leading contributing factors are {top_text}. "
         f"{agreement_text} "
         f"The explanation agreement score is {unified['agreementScore']:.1f}/100 "
-        f"and explanation confidence is {unified['confidenceScore']:.1f}/100."
+        f"and cross-method consistency is {unified['consistencyScore']:.1f}/100."
     )

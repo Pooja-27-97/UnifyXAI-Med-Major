@@ -262,7 +262,7 @@ export default function NewPrediction() {
       `with a predicted probability of ${(result.probability * 100).toFixed(1)}%. ` +
       `The leading contributing factors are ${drivers}. ` +
       `${agreementNote} ` +
-      `Explanation confidence is ${unified.confidenceScore.toFixed(1)}%.`
+      `Explanation confidence is ${unified.consistencyScore.toFixed(1)}%.`
     );
   }
 
