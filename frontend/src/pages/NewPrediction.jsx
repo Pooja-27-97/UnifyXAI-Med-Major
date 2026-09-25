@@ -257,12 +257,16 @@ export default function NewPrediction() {
         "SHAP and LIME show some disagreement, so the explanation should be interpreted with additional clinical judgement.";
     }
 
+    const consistency = unified.consistencyScore ?? unified.confidenceScore ?? null;
+
     return (
       `The model classifies this patient as ${result.prediction.toLowerCase()} ` +
       `with a predicted probability of ${(result.probability * 100).toFixed(1)}%. ` +
       `The leading contributing factors are ${drivers}. ` +
       `${agreementNote} ` +
-      `Explanation confidence is ${unified.consistencyScore.toFixed(1)}%.`
+      (consistency !== null
+        ? `Cross-method consistency is ${Number(consistency).toFixed(1)}/100.`
+        : "Cross-method consistency is unavailable.")
     );
   }
 

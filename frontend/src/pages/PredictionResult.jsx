@@ -25,6 +25,7 @@ export default function PredictionResult() {
   }
 
   const { patient, result, unified } = current;
+  const consistencyScore = unified.consistencyScore ?? unified.confidenceScore;
 
   return (
     <Layout
@@ -77,8 +78,26 @@ export default function PredictionResult() {
             </div>
           </div>
           <div style={{ display: "flex", justifyContent: "space-around", flex: 1, alignItems: "center" }}>
-            <ScoreRing value={unified.agreementScore} label="Agreement Score" color="var(--teal-600)" />
-            <ScoreRing value={unified.confidenceScore} label="Explanation Confidence" color="var(--unified)" />
+            <ScoreRing
+              value={unified.agreementScore}
+              label="Agreement Score"
+              color="var(--teal-600)"
+            />
+
+            {consistencyScore != null ? (
+              <ScoreRing
+                value={Number(consistencyScore)}
+                label="Cross-Method Consistency"
+                color="var(--unified)"
+              />
+            ) : (
+              <div style={{ textAlign: "center" }}>
+                <p style={{ fontWeight: 700 }}>N/A</p>
+                <p style={{ fontSize: 12, color: "var(--muted)" }}>
+                  Cross-Method Consistency
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>

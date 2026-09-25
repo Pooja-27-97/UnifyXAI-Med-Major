@@ -24,6 +24,7 @@ export function MethodDot({ color, label }) {
 }
 
 export function ScoreRing({ value, label, color = "var(--blue-700)", size = 128 }) {
+  const safeValue = Number.isFinite(Number(value))? Number(value): 0;
   const stroke = 10;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
@@ -40,7 +41,7 @@ export function ScoreRing({ value, label, color = "var(--blue-700)", size = 128 
           style={{ transition: "stroke-dashoffset 0.8s ease" }}
         />
         <text x="50%" y="47%" textAnchor="middle" fontFamily="IBM Plex Mono" fontSize="22" fontWeight="600" fill="var(--ink)">
-          {value.toFixed(1)}
+          {safeValue.toFixed(1)}
         </text>
         <text x="50%" y="63%" textAnchor="middle" fontFamily="Inter" fontSize="11" fill="var(--muted)">
           / 100

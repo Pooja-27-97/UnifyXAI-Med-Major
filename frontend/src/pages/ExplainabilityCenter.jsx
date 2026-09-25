@@ -200,12 +200,21 @@ function Overview({ current }) {
           </div>
           <div style={{ display: "flex", justifyContent: "space-around", flex: 1, alignItems: "center" }}>
             <ScoreRing value={unified.agreementScore} label="Agreement" color="var(--teal-600)" size={104} />
-            <ScoreRing
-              value={unified.consistencyScore}
-              label="Explanation Confidence"
-              color="var(--unified)"
-              size={104}
-            />
+            {(unified.consistencyScore ?? unified.confidenceScore) != null ? (
+              <ScoreRing
+                value={Number(
+                  unified.consistencyScore ?? unified.confidenceScore
+                )}
+                label="Cross-Method Consistency"
+                color="var(--unified)"
+                size={104}
+              />
+            ) : (
+              <div style={{ textAlign: "center" }}>
+                <strong>N/A</strong>
+                <p>Cross-Method Consistency</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
